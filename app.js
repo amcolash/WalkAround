@@ -1,3 +1,8 @@
+const delay = 20 * 60 * 1000; // 20 minutes
+const threshold = 100; // need to have at least 100 steps more each check
+var interval;
+var lastCount = 0;
+
 window.onload = function() {
   gapi.load('client', function() {
     gapi.client.init({
@@ -17,6 +22,9 @@ window.onload = function() {
 
 function onSuccess(googleUser) {
   updateUI();
+
+  // Get inital count
+  getData();
 }
 
 function onFailure(error) {
@@ -31,7 +39,7 @@ function signOut() {
   });
 }
 
-function getData() {
+function getData(compare) {
   var start = new Date();
   start.setHours(0,0,0,0);
 
@@ -59,8 +67,23 @@ function getData() {
   })
   .then(function(res) {
     // console.log(res);
-    if (res.result.bucket.length > 0) {
-      console.log(res.result.bucket[0].dataset[0].point[0].value[0].intVal);
+    if (res.result.bucket.length > 0 && res.result.bucket[0].dataset.length > 0) {
+      var value = res.result.bucket[0].dataset[0].point[0].value[0].intVal;
+      console.log("last value: " + lastCount + ", new value: " + value);
+
+      if (compare) {
+        if (value - lastCount < threshold) {
+          console.log("time to move!");
+
+          // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
+          var audio = new Audio('chime.wav');
+          audio.play();
+        } else {
+          console.log("you are ok");
+        }
+      }
+
+      lastCount = value;
     }
   }, function(err) {
     console.error(err);
@@ -71,9 +94,17 @@ function updateUI() {
   var auth2 = gapi.auth2.getAuthInstance();
   var signedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
 
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+
   if (signedIn) {
     $('#signed-in').show();
     $('#signed-out').hide();
+
+    // Set up the interval to check things here
+    interval = setInterval(function() { getData(true) }, delay);
   } else {
     $('#signed-in').hide();
     $('#signed-out').show();

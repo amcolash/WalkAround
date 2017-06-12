@@ -1,5 +1,6 @@
-const delay = 20 * 60 * 1000; // 20 minutes
-const threshold = 100; // need to have at least 100 steps more each check
+const delay = 60 * 60 * 1000; // 60 minutes
+const threshold = 75; // need to have at least 100 steps more each check
+const closeDelay = 20 * 1000;
 var interval;
 var lastCount = 0;
 
@@ -22,6 +23,9 @@ window.onload = function() {
 
 function onSuccess(googleUser) {
   updateUI();
+
+  if (Notification.permission !== "granted")
+    Notification.requestPermission();
 
   // Get inital count
   getData();
@@ -78,6 +82,17 @@ function getData(compare) {
           // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
           var audio = new Audio('chime.wav');
           audio.play();
+
+          // Show a notification
+          if (Notification.permission === "granted") {
+            var notification = new Notification('StandUp', {
+              body: 'Time to move!',
+              icon: 'https://s-media-cache-ak0.pinimg.com/originals/a4/93/5a/a4935a175ab347ac6c58164554ad67fa.jpg'
+            });
+
+            setTimeout(function(){notification.close();}, closeDelay);
+          }
+
         } else {
           console.log("you are ok");
         }

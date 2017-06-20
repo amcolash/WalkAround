@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtoIcGIFltXHTu4ZSmZaDADldifQ7VJg2tyUeFKFaTNTwLxttqhDgRWlZ1nzvJymeke2N5myOxMmnq6B0FNEquNUs7JrQ87bLyVKMEwACUCcBDpup/ChJ3jxEn/16HXLmwO3ZSXQ2DwleMy3EXb4T29fOQGqQoSWve9zr5K2ILMTogNoq0yR53wSF5CnRtCkotM3cerawmljM2vOF8MH8masSeoPejkpOd2/cHt0p2naNjQY11qUejaSWjDN2EJdxG2USgKrHRBzI17AsKCzSLxIQwN71liZRaNcgZ2raObgSKusizG+lxoOPtk9yzruHNGczU/NH4W5G34qmOsaBiQIDAQAB",
+
+  "name": "WalkAround",
+  "description": "A lightweight chrome extension that reminds you to walk around if you have been sitting (using google fit activity api).",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "img/icon.png",
+    "default_popup": "popup.html"
+  },
+
+  "permissions": [
+    "activeTab",
+    "identity",
+    "https://ajax.googleapis.com/",
+    "https://apis.google.com/",
+    "https://code.jquery.com/"
+  ],
+
+  "background": {
+    "page": "background.html"
+  },
+  "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'",
+
+  "oauth2": {
+    "client_id": "246815826082-m7g2apod24j866o20q4f7e0j4bfest5k.apps.googleusercontent.com",
+    "scopes": [
+      "profile",
+      "https://www.googleapis.com/auth/fitness.activity.read"
+    ]
+  }
+
+}

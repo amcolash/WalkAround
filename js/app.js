@@ -80,7 +80,7 @@ function getData(compare) {
           console.log("time to move!");
 
           // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
-          var audio = new Audio('chime.wav');
+          var audio = new Audio('../audio/chime.wav');
           audio.play();
 
           // Show a notification
@@ -89,8 +89,6 @@ function getData(compare) {
               body: 'Time to move!',
               icon: 'https://s-media-cache-ak0.pinimg.com/originals/a4/93/5a/a4935a175ab347ac6c58164554ad67fa.jpg'
             });
-
-            setTimeout(function(){notification.close();}, closeDelay);
           }
 
         } else {

@@ -1,0 +1,24 @@
+{
+  "name": "WalkAround",
+  "homepage": "https://github.com/amcolash/WalkAround",
+  "authors": [
+    "Andrew McOlash <amcolash@gmail.com>"
+  ],
+  "description": "A lightweight chrome extension that reminds you to walk around if you have been sitting (using google fit activity api).",
+  "main": "js/app.js",
+  "keywords": [
+    "chrome",
+    "google-fit"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^3.2.1"
+  }
+}

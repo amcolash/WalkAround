@@ -1,4 +1,4 @@
 /* Default on page laod */
-#signed-in {
+#signed-in, #signed-out {
   display: none;
 }

@@ -1,7 +1,26 @@
-console.log("loaded")
+// const delay = 60 * 60 * 1000; // 60 minutes
+const delay = 60 * 1000; // 60 minutes
+const threshold = 75; // need to have at least 100 steps more each check
+const closeDelay = 20 * 1000;
+
+var interval;
+var lastCount = 0;
+var token;
+var notificationID;
+
+window.onload = function() {
+  // gapi.load('client', function() {
+  //   gapi.client.init({
+  //     'clientId': '246815826082-f2du3c4ince352fi8fbpn2hm0i6bf2fi.apps.googleusercontent.com',
+  //     'scope': 'profile https://www.googleapis.com/auth/fitness.activity.read',
+  //   });
+  // });
+
+  auth(true);
+}
 
 // Auth and try again if failed
-auth(true);
+
 
 function auth(tryAgain) {
   chrome.identity.getAuthToken({
@@ -17,14 +36,143 @@ function auth(tryAgain) {
 
       x.onload = function() {
         // If there was an error, try to remove cached token and try re-auth
-        if (tryAgain && JSON.parse(x.response).error) {
-          chrome.identity.removeCachedAuthToken({token: token}, function() {
-            // Try to auth again, but stop trying if failed
-            auth(false);
-          });
+        var error = JSON.parse(x.response).error;
+        if (error) {
+          if (tryAgain) {
+            chrome.identity.removeCachedAuthToken({token: token}, function() {
+              // Try to auth again, but stop trying if failed
+              onFailure(error);
+              auth(false);
+            });
+          } else {
+            onFailure(error);
+          }
+        } else {
+          window.token = token;
+          onSuccess();
         }
       };
 
       x.send();
   });
+}
+
+function onSuccess() {
+  updateInterval();
+
+  // Get inital count
+  getData();
+}
+
+function onFailure(error) {
+  console.log(error);
+  updateInterval();
+}
+
+// TODO: Remove this?
+function signOut() {
+  var auth2 = gapi.auth2.getAuthInstance();
+  auth2.signOut().then(function () {
+    updateInterval();
+  });
+}
+
+function getData(compare) {
+  var start = new Date();
+  start.setHours(0,0,0,0);
+
+  var end = new Date(start.getTime());
+  end.setHours(23,59,59,9999);
+
+  var request = {
+    "aggregateBy": [{
+      "dataTypeName": "com.google.step_count.delta",
+      "dataSourceId": "derived:com.google.step_count.delta:com.google.android.gms:estimated_steps"
+    }],
+    "bucketByTime": { "durationMillis": 87000000 }, // one day roughly, a little more just in case
+    "startTimeMillis": start.getTime(),
+    "endTimeMillis": end.getTime()
+  };
+
+  // var auth2 = gapi.auth2.getAuthInstance();
+  // var signedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
+  if (!token) return;
+
+  var x = new XMLHttpRequest();
+  x.open('POST', 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate');
+  x.setRequestHeader("Authorization", "Bearer " + token);
+  x.setRequestHeader("Content-Type", "application/json;encoding=utf-8");
+
+  x.onload = function() {
+    var response = JSON.parse(x.response);
+    // If there was an error, try to remove cached token and try re-auth
+    var error = response.error;
+    if (error) {
+      console.error(error);
+    } else {
+      // console.log(res);
+      if (response.bucket.length > 0 && response.bucket[0].dataset.length > 0) {
+        var value = response.bucket[0].dataset[0].point[0].value[0].intVal;
+        console.log("last value: " + lastCount + ", new value: " + value);
+
+        if (compare) {
+          if (value - lastCount < threshold) {
+            console.log("time to move!");
+
+            // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
+            var audio = new Audio('../audio/chime.wav');
+            // audio.play(); TODO
+
+            // Show a notification
+            chrome.notifications.create('', {
+              type: 'basic',
+              title:'WalkAround',
+              message: 'Time to move!',
+              iconUrl: 'img/walk.png',
+              eventTime: Date.now(),
+              priority: 1, // Keep around for a bit
+              buttons: [  { title: 'Snooze 5 min' } ]
+            }, function(id) {
+              notificationID = id;
+            });
+          } else {
+            console.log("you are ok");
+          }
+        }
+
+        lastCount = value;
+      }
+    }
+  };
+
+  x.send(JSON.stringify(request));
+}
+
+function updateInterval(snooze) {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+
+  if (token) {
+    interval = setInterval(function() { getData(true) }, snooze ? 60 *1000 * 5 : delay);
+  }
+}
+
+chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
+  if (notifId === notificationID) {
+    if (btnIdx === 0) {
+      chrome.notifications.clear(notificationID);
+      updateInterval(true);
+    }
+  }
+});
+
+//for listening any message which comes from runtime
+chrome.runtime.onMessage.addListener(messageReceived);
+
+function messageReceived(msg) {
+  if (msg.auth) {
+    chrome.runtime.sendMessage({'auth': typeof token !== 'undefined'});
+  }
 }

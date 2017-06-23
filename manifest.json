@@ -7,23 +7,21 @@
   "description": "A lightweight chrome extension that reminds you to walk around if you have been sitting (using google fit activity api).",
   "version": "1.0",
 
-  "browser_action": {
-    "default_icon": "img/icon.png",
-    "default_popup": "popup.html"
+  "background": {
+    "scripts": ["js/background.js"]
   },
+
+  "options_page": "options.html",
 
   "permissions": [
-    "activeTab",
     "identity",
-    "https://ajax.googleapis.com/",
-    "https://apis.google.com/",
-    "https://code.jquery.com/"
+    "notifications",
+    "storage",
+    "https://googleapis.com/fitness/v1",
+    "https://api.myjson.com/"
   ],
 
-  "background": {
-    "page": "background.html"
-  },
-  "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'",
+  "content_security_policy": "script-src 'self' https://googleapis.com; object-src 'self'",
 
   "oauth2": {
     "client_id": "246815826082-m7g2apod24j866o20q4f7e0j4bfest5k.apps.googleusercontent.com",

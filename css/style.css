@@ -1,4 +1,33 @@
-/* Default on page laod */
-#signed-in, #signed-out {
-  display: none;
+body {
+  padding-top: 10px;
+}
+
+label {
+  font-size: 24px;
+  font-weight: 400;
+}
+
+hr {
+  border-top: 1px solid #ddd;
+}
+
+.row {
+  padding-bottom: 10px;
+}
+
+.checkbox label::before {
+  position: inherit;
+}
+
+.checkbox label::after {
+  left: 5px;
+  top: 8px;
+}
+
+.checkbox {
+  padding-left: 15px;
+}
+
+#save {
+  margin-right: 15px;
 }

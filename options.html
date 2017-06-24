@@ -1,38 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <head><title>My Test Extension Options</title></head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Walk Around Options</title>
 
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/bootstrap-checkbox.css">
     <link rel="stylesheet" href="css/style.css">
+
   </head>
-
   <body>
-    Favorite color:
-    <select id="color">
-     <option value="red">red</option>
-     <option value="green">green</option>
-     <option value="blue">blue</option>
-     <option value="yellow">yellow</option>
-    </select>
+    <div class="container">
+      <div class="col-xs-6 col-xs-offset-3">
+        <h1 class="text-center">Walk Around Options</h1>
+        <hr>
 
-    <label>
-      <input type="checkbox" id="like">
-      I like colors.
-    </label>
+        <div class="form-group row">
+          <label for="threshold">Step Threshold (Per Hour)</label>
+          <input type="number" class="form-control" id="threshold" placeholder="Steps Per Hour" min="1">
+        </div>
 
-    <div id="status"></div>
-    <button id="save">Save</button>
+        <div class="checkbox checkbox-info row">
+          <input id="audio" type="checkbox">
+          <label for="audio"> Audio Ding</label>
+        </div>
 
-    <div id="signed-out">
-      You need to auth!
+        <div class="row">
+          <button id="save" class="btn btn-info">Submit</button>
+          <span id="status"></span>
+        </div>
+
+      </div>
     </div>
-
-    <div id="signed-in">
-      <a href="#" onclick="getData(true)">Get Data</a>
-      <br><br>
-      <a href="#" onclick="signOut();">Sign out</a>
-    </div>
-
     <script src="js/options.js"></script>
   </body>
 </html>

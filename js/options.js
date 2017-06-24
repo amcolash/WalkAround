@@ -1,48 +1,42 @@
-// TODO: Do I need a popup or just an options page?
-
-
-// for listening to any message which comes from runtime
-chrome.runtime.onMessage.addListener(messageReceived);
-
-function messageReceived(msg) {
-  document.getElementById('signed-in').style.display = msg.auth ? "block" : "none";
-  document.getElementById('signed-out').style.display = !msg.auth ? "block" : "none";
-}
-
-// Ask if auth to update UI accordingly
-chrome.runtime.sendMessage({'auth': true});
-
-
-// From chrome docs
-// Saves options to chrome.storage
+// Saves options to chrome.storage.sync
 function save_options() {
-  var color = document.getElementById('color').value;
-  var likesColor = document.getElementById('like').checked;
+  var thresholdInput = document.getElementById('threshold');
+  var audio = document.getElementById('audio').checked;
+
+
+  if (thresholdInput.value < 1) {
+    thresholdInput.value = 1;
+  }
+
+  var threshold = thresholdInput.value;
+
   chrome.storage.sync.set({
-    favoriteColor: color,
-    likesColor: likesColor
+    threshold: threshold,
+    audio: audio
   }, function() {
+    // Send message to background that options were updated
+    chrome.runtime.sendMessage({'options': true});
+
     // Update status to let user know options were saved.
     var status = document.getElementById('status');
-    status.textContent = 'Options saved.';
+    status.innerHTML = 'Options Saved <i class="fa fa-check" aria-hidden="true"></i>';
     setTimeout(function() {
-      status.textContent = '';
-    }, 750);
+      status.innerHTML = '';
+    }, 1500);
   });
 }
 
-// Restores select box and checkbox state using the preferences
-// stored in chrome.storage.
+// Restores preferences stored in chrome.storage.
 function restore_options() {
   // Use default value color = 'red' and likesColor = true.
   chrome.storage.sync.get({
-    favoriteColor: 'red',
-    likesColor: true
+    threshold: '75',
+    audio: true,
   }, function(items) {
-    document.getElementById('color').value = items.favoriteColor;
-    document.getElementById('like').checked = items.likesColor;
+    document.getElementById('threshold').value = items.threshold;
+    document.getElementById('audio').checked = items.audio;
   });
 }
+
 document.addEventListener('DOMContentLoaded', restore_options);
-document.getElementById('save').addEventListener('click',
-    save_options);
+document.getElementById('save').addEventListener('click', save_options);

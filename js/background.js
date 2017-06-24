@@ -1,26 +1,31 @@
-// const delay = 60 * 60 * 1000; // 60 minutes
-const delay = 60 * 1000; // 60 minutes
-const threshold = 75; // need to have at least 100 steps more each check
-const closeDelay = 20 * 1000;
+const delay = 60 * 60 * 1000; // 60 minutes
 
-var interval;
+var threshold;
+var audio;
+
 var lastCount = 0;
+var interval;
 var token;
 var notificationID;
 
 window.onload = function() {
-  // gapi.load('client', function() {
-  //   gapi.client.init({
-  //     'clientId': '246815826082-f2du3c4ince352fi8fbpn2hm0i6bf2fi.apps.googleusercontent.com',
-  //     'scope': 'profile https://www.googleapis.com/auth/fitness.activity.read',
-  //   });
-  // });
+  // Update options
+  getOptions();
 
+  // Get auth and set interval if we have a token and valid auth
   auth(true);
 }
 
-// Auth and try again if failed
-
+function getOptions() {
+  chrome.storage.sync.get({
+    threshold: '75',
+    notifications: true,
+    audio: true,
+  }, function(items) {
+    threshold = items.threshold;
+    audio = items.audio;
+  });
+}
 
 function auth(tryAgain) {
   chrome.identity.getAuthToken({
@@ -94,8 +99,6 @@ function getData(compare) {
     "endTimeMillis": end.getTime()
   };
 
-  // var auth2 = gapi.auth2.getAuthInstance();
-  // var signedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
   if (!token) return;
 
   var x = new XMLHttpRequest();
@@ -120,8 +123,10 @@ function getData(compare) {
             console.log("time to move!");
 
             // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
-            var audio = new Audio('../audio/chime.wav');
-            // audio.play(); TODO
+            if (audio) {
+              var chime = new Audio('../audio/chime.wav');
+              chime.play();
+            }
 
             // Show a notification
             chrome.notifications.create('', {
@@ -172,7 +177,7 @@ chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
 chrome.runtime.onMessage.addListener(messageReceived);
 
 function messageReceived(msg) {
-  if (msg.auth) {
-    chrome.runtime.sendMessage({'auth': typeof token !== 'undefined'});
+  if (msg.optons) {
+    getOptions();
   }
 }

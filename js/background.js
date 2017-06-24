@@ -1,4 +1,4 @@
-const delay = 60 * 60 * 1000; // 60 minutes
+const minute = 60 * 1000; // 1 minute
 
 var threshold;
 var audio;
@@ -160,7 +160,7 @@ function updateInterval(snooze) {
   }
 
   if (token) {
-    interval = setInterval(function() { getData(true) }, snooze ? 60 *1000 * 5 : delay);
+    interval = setInterval(function() { getData(true) }, snooze ? 5 * minute : 60 * minute);
   }
 }
 
@@ -177,6 +177,7 @@ chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
 chrome.runtime.onMessage.addListener(messageReceived);
 
 function messageReceived(msg) {
+  // If the options page says it has new options, reload options
   if (msg.optons) {
     getOptions();
   }

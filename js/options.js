@@ -3,6 +3,16 @@ function save_options() {
   var thresholdInput = document.getElementById('threshold');
   var audio = document.getElementById('audio').checked;
 
+  var mon = document.getElementById('mon').checked;
+  var tues = document.getElementById('tues').checked;
+  var wed = document.getElementById('wed').checked;
+  var thurs = document.getElementById('thurs').checked;
+  var fri = document.getElementById('fri').checked;
+  var sat = document.getElementById('sat').checked;
+  var sun = document.getElementById('sun').checked;
+
+  var start = document.getElementById('start').value;
+  var end = document.getElementById('end').value;
 
   if (thresholdInput.value < 1) {
     thresholdInput.value = 1;
@@ -12,7 +22,18 @@ function save_options() {
 
   chrome.storage.sync.set({
     threshold: threshold,
-    audio: audio
+    audio: audio,
+
+    mon: mon,
+    tues: tues,
+    wed: wed,
+    thurs: thurs,
+    fri: fri,
+    sat: sat,
+    sun: sun,
+
+    start: start,
+    end: end
   }, function() {
     // Send message to background that options were updated
     chrome.runtime.sendMessage({'options': true});
@@ -32,9 +53,31 @@ function restore_options() {
   chrome.storage.sync.get({
     threshold: '75',
     audio: true,
+
+    mon: true,
+    tues: true,
+    wed: true,
+    thurs: true,
+    fri: true,
+    sat:false,
+    sun: false,
+
+    start: 7,
+    end: 17
   }, function(items) {
     document.getElementById('threshold').value = items.threshold;
     document.getElementById('audio').checked = items.audio;
+
+    document.getElementById('mon').checked = items.mon;
+    document.getElementById('tues').checked = items.tues;
+    document.getElementById('wed').checked = items.wed;
+    document.getElementById('thurs').checked = items.thurs;
+    document.getElementById('fri').checked = items.fri;
+    document.getElementById('sat').checked = items.sat;
+    document.getElementById('sun').checked = items.sun;
+
+    document.getElementById('start').value = items.start;
+    document.getElementById('end').value = items.end;
   });
 }
 

@@ -14,25 +14,136 @@
   </head>
   <body>
     <div class="container">
-      <div class="col-xs-6 col-xs-offset-3">
-        <h1 class="text-center">Walk Around Options</h1>
-        <hr>
 
-        <div class="form-group row">
-          <label for="threshold">Step Threshold (Per Hour)</label>
-          <input type="number" class="form-control" id="threshold" placeholder="Steps Per Hour" min="1">
+      <div class="row justify-content-center">
+
+        <div class="col-lg-6 col-md-8 col-xs-12">
+          <h1 class="text-center">Walk Around Options</h1>
+          <hr>
+
+          <div class="form-group row">
+            <label for="threshold">Step Threshold (Per Hour)</label>
+            <input type="number" class="form-control" id="threshold" placeholder="Steps Per Hour" min="1">
+          </div>
+
+          <div class="less-pad checkbox checkbox-info row">
+            <input id="audio" type="checkbox">
+            <label for="audio"> Audio Ding</label>
+          </div>
+
+          <div class="row">
+            <label>Schedule</label>
+          </div>
+
+          <div class="row">
+            <div class="checkbox checkbox-info col">
+              <input id="mon" type="checkbox">
+              <label for="mon"> Mon</label>
+            </div>
+
+            <div class="checkbox checkbox-info col">
+              <input id="tues" type="checkbox">
+              <label for="tues"> Tues</label>
+            </div>
+
+            <div class="checkbox checkbox-info col">
+              <input id="wed" type="checkbox">
+              <label for="wed"> Wed</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="checkbox checkbox-info col">
+              <input id="thurs" type="checkbox">
+              <label for="thurs"> Thurs</label>
+            </div>
+
+            <div class="checkbox checkbox-info col">
+              <input id="fri" type="checkbox">
+              <label for="fri"> Fri</label>
+            </div>
+
+            <div class="checkbox checkbox-info col">
+              <input id="sat" type="checkbox">
+              <label for="sat"> Sat</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="checkbox checkbox-info col">
+              <input id="sun" type="checkbox">
+              <label for="sun"> Sun</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col-6">
+              <label for="start">Start Time</label>
+              <select class="form-control" id="start">
+                <option value="0">12 am</option>
+                <option value="1">1 am</option>
+                <option value="2">2 am</option>
+                <option value="3">3 am</option>
+                <option value="4">4 am</option>
+                <option value="5">5 am</option>
+                <option value="6">6 am</option>
+                <option value="7">7 am</option>
+                <option value="8">8 am</option>
+                <option value="9">9 am</option>
+                <option value="10">10 am</option>
+                <option value="11">11 am</option>
+                <option value="12">12 pm</option>
+                <option value="13">1 pm</option>
+                <option value="14">2 pm</option>
+                <option value="15">3 pm</option>
+                <option value="16">4 pm</option>
+                <option value="17">5 pm</option>
+                <option value="18">6 pm</option>
+                <option value="19">7 pm</option>
+                <option value="20">8 pm</option>
+                <option value="21">9 pm</option>
+                <option value="22">10 pm</option>
+                <option value="23">11 pm</option>
+              </select>
+            </div>
+
+            <div class="form-group col-6">
+              <label for="end">End Time</label>
+              <select class="form-control" id="end">
+                <option value="0">12 am</option>
+                <option value="1">1 am</option>
+                <option value="2">2 am</option>
+                <option value="3">3 am</option>
+                <option value="4">4 am</option>
+                <option value="5">5 am</option>
+                <option value="6">6 am</option>
+                <option value="7">7 am</option>
+                <option value="8">8 am</option>
+                <option value="9">9 am</option>
+                <option value="10">10 am</option>
+                <option value="11">11 am</option>
+                <option value="12">12 pm</option>
+                <option value="13">1 pm</option>
+                <option value="14">2 pm</option>
+                <option value="15">3 pm</option>
+                <option value="16">4 pm</option>
+                <option value="17">5 pm</option>
+                <option value="18">6 pm</option>
+                <option value="19">7 pm</option>
+                <option value="20">8 pm</option>
+                <option value="21">9 pm</option>
+                <option value="22">10 pm</option>
+                <option value="23">11 pm</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="save" class="btn btn-info">Submit</button>
+            <span id="status"></span>
+          </div>
+
         </div>
-
-        <div class="checkbox checkbox-info row">
-          <input id="audio" type="checkbox">
-          <label for="audio"> Audio Ding</label>
-        </div>
-
-        <div class="row">
-          <button id="save" class="btn btn-info">Submit</button>
-          <span id="status"></span>
-        </div>
-
       </div>
     </div>
     <script src="js/options.js"></script>

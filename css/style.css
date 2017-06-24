@@ -21,13 +21,22 @@ hr {
 
 .checkbox label::after {
   left: 5px;
-  top: 8px;
+  top: 9px;
 }
 
 .checkbox {
   padding-left: 15px;
 }
 
+.less-pad.checkbox {
+  padding-left: 5px;
+}
+
 #save {
   margin-right: 15px;
+  margin-top: 15px;
+}
+
+#status {
+  margin-top: 20px;
 }

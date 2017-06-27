@@ -150,47 +150,48 @@ function getData(compare) {
       console.error(error);
     } else {
       // console.log(res);
-      if (response.bucket.length > 0 && response.bucket[0].dataset.length > 0) {
-        var value = response.bucket[0].dataset[0].point[0].value[0].intVal;
-        console.log("last value: " + lastCount + ", new value: " + value);
-
-        if (compare) {
-          var pass = checkSchedule();
-          console.log("check schedule: " + (pass ? "passed" : "failed"));
-
-          if (!pass) return;
-        }
-
-        if (compare && checkSchedule()) {
-          if (value - lastCount < threshold) {
-            console.log("time to move!");
-
-            // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
-            if (audio) {
-              var chime = new Audio('../audio/chime.wav');
-              chime.play();
-            }
-
-            // Show a notification
-            chrome.notifications.create('', {
-              type: 'basic',
-              title:'WalkAround',
-              message: 'Time to move!',
-              iconUrl: 'img/walk.png',
-              eventTime: Date.now(),
-              priority: 1, // Keep around for a bit
-              buttons: [  { title: 'Snooze 5 min' } ]
-            }, function(id) {
-              notificationID = id;
-            });
-          } else {
-            console.log("you are ok");
-          }
-        }
-
-        updateInterval(false);
-        lastCount = value;
+      var value = 0;
+      try {
+        value = response.bucket[0].dataset[0].point[0].value[0].intVal;
+      } catch (e) {
+        console.error(e);
       }
+
+      console.log("last value: " + lastCount + ", new value: " + value);
+
+      var pass = checkSchedule();
+      if (compare)
+        console.log("check schedule: " + (pass ? "passed" : "failed"));
+
+      if (compare) {
+        if (value - lastCount < threshold) {
+          console.log("time to move!");
+
+          // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
+          if (audio) {
+            var chime = new Audio('../audio/chime.wav');
+            chime.play();
+          }
+
+          // Show a notification
+          chrome.notifications.create('', {
+            type: 'basic',
+            title:'WalkAround',
+            message: 'Time to move!',
+            iconUrl: 'img/walk.png',
+            eventTime: Date.now(),
+            priority: 1, // Keep around for a bit
+            buttons: [  { title: 'Snooze 5 min' } ]
+          }, function(id) {
+            notificationID = id;
+          });
+        } else {
+          console.log("you are ok");
+        }
+      }
+
+      updateInterval(false);
+      lastCount = value;
     }
   };
 

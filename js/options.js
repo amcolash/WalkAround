@@ -11,8 +11,8 @@ function save_options() {
   var sat = document.getElementById('sat').checked;
   var sun = document.getElementById('sun').checked;
 
-  var start = document.getElementById('start').value;
-  var end = document.getElementById('end').value;
+  var start = Number(document.getElementById('start').value);
+  var end = Number(document.getElementById('end').value);
 
   if (thresholdInput.value < 1) {
     thresholdInput.value = 1;
@@ -76,8 +76,8 @@ function restore_options() {
     document.getElementById('sat').checked = items.sat;
     document.getElementById('sun').checked = items.sun;
 
-    document.getElementById('start').value = items.start;
-    document.getElementById('end').value = items.end;
+    document.getElementById('start').value = Number(items.start);
+    document.getElementById('end').value = Number(items.end);
   });
 }
 

@@ -1,29 +1,73 @@
-const minute = 60 * 1000; // 1 minute
-
 var threshold;
 var audio;
+
+var schedule = {};
 
 var lastCount = 0;
 var interval;
 var token;
 var notificationID;
 
-window.onload = function() {
-  // Update options
-  getOptions();
+// test the schedule before starting things up
+// testSchedule();
 
-  // Get auth and set interval if we have a token and valid auth
-  auth(true);
+// Update options
+getOptions();
+
+// Handle snoozing notifications
+chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
+  if (notifId === notificationID) {
+    if (btnIdx === 0) {
+      chrome.notifications.clear(notificationID);
+      updateInterval(true);
+    }
+  }
+});
+
+//for listening any message which comes from runtime
+chrome.runtime.onMessage.addListener(messageReceived);
+
+// On chrome message recieved
+function messageReceived(msg) {
+  // If the options page says it has new options, reload options
+  if (msg.options) {
+    getOptions();
+  }
 }
+
+
+// Get auth and set interval if we have a token and valid auth
+auth(true);
 
 function getOptions() {
   chrome.storage.sync.get({
     threshold: '75',
-    notifications: true,
     audio: true,
+
+    mon: true,
+    tues: true,
+    wed: true,
+    thurs: true,
+    fri: true,
+    sat:false,
+    sun: false,
+
+    start: 7,
+    end: 17
   }, function(items) {
     threshold = items.threshold;
     audio = items.audio;
+
+    schedule.sun = items.sun;
+    schedule.mon = items.mon;
+    schedule.tues = items.tues;
+    schedule.wed = items.wed;
+    schedule.thurs = items.thurs;
+    schedule.fri = items.fri;
+    schedule.sat = items.sat;
+
+    schedule.start = items.start;
+    schedule.end = items.end;
   });
 }
 
@@ -70,16 +114,8 @@ function onSuccess() {
 }
 
 function onFailure(error) {
-  console.log(error);
+  console.error(error);
   updateInterval();
-}
-
-// TODO: Remove this?
-function signOut() {
-  var auth2 = gapi.auth2.getAuthInstance();
-  auth2.signOut().then(function () {
-    updateInterval();
-  });
 }
 
 function getData(compare) {
@@ -119,6 +155,13 @@ function getData(compare) {
         console.log("last value: " + lastCount + ", new value: " + value);
 
         if (compare) {
+          var pass = checkSchedule();
+          console.log("check schedule: " + (pass ? "passed" : "failed"));
+
+          if (!pass) return;
+        }
+
+        if (compare && checkSchedule()) {
           if (value - lastCount < threshold) {
             console.log("time to move!");
 
@@ -145,12 +188,98 @@ function getData(compare) {
           }
         }
 
+        updateInterval(false);
         lastCount = value;
       }
     }
   };
 
   x.send(JSON.stringify(request));
+}
+
+function testSchedule() {
+  console.clear();
+
+  var now = new Date();
+  schedule.sun = now.getDay() == 0;
+  schedule.mon = now.getDay() == 1;
+  schedule.tues = now.getDay() == 2;
+  schedule.wed = now.getDay() == 3;
+  schedule.thurs = now.getDay() == 4;
+  schedule.fri = now.getDay() == 5;
+  schedule.sat = now.getDay() == 6;
+
+  now.setHours(4);
+
+  schedule.start = 0;
+  schedule.end = 6;
+  // 0 <= 6 && (4 < 0 || 4 > 6), T && (F || F) --> F  ~== T
+  console.assert(checkSchedule(now), "schedule check failed");
+
+  schedule.start = 4;
+  schedule.end = 6;
+  // 4 <= 6 && (4 < 4 || 4 > 6), T && (F || F) --> F  ~== T
+  console.assert(checkSchedule(now), "schedule check failed");
+
+  schedule.start = 6;
+  schedule.end = 12;
+  // 6 <= 12 && (4 < 6 || 4 > 12), T && (T || F) --> T ~== F
+  console.assert(!checkSchedule(now), "schedule check failed");
+
+  schedule.start = 6;
+  schedule.end = 0;
+  // 6 > 0 && (4 > 6 || 4 < 0), T && (F || F) --> F  ~== T
+  console.assert(checkSchedule(now), "schedule check failed");
+
+  schedule.start = 4;
+  schedule.end = 0;
+  // 4 > 0 && (4 > 4 || 4 < 0), T && (F || F) --> F  ~== T
+  console.assert(checkSchedule(now), "schedule check failed");
+
+  schedule.start = 6;
+  schedule.end = 5;
+  // 6 > 5 && (4 > 6 || 4 < 5), T && (T || F) --> T ~== F
+  console.assert(!checkSchedule(now), "schedule check failed");
+
+  schedule.start = 4;
+  schedule.end = 4;
+  // 4 > 4 && (4 > 4 || 4 < 4), F && (F || F) --> F  ~== T
+  console.assert(checkSchedule(now), "schedule check failed");
+}
+
+// TODO: Check this out
+function checkSchedule(time) {
+  var now = new Date();
+  if (time) {
+    now = time;
+  }
+
+  if (schedule.start <= schedule.end && (now.getHours() < schedule.start || now.getHours() > schedule.end)) {
+    return false;
+  }
+
+  if (schedule.start > schedule.end && (now.getHours() > schedule.start || now.getHours() < schedule.end)) {
+    return false;
+  }
+
+  switch(now.getDay()) {
+  case 0:
+    return schedule.sun;
+  case 1:
+    return schedule.mon;
+  case 2:
+    return schedule.tues;
+  case 3:
+    return schedule.wed;
+  case 4:
+    return schedule.thurs;
+  case 5:
+    return schedule.fri;
+  case 6:
+    return schedule.sat;
+  default:
+    return true;
+  }
 }
 
 function updateInterval(snooze) {
@@ -160,25 +289,21 @@ function updateInterval(snooze) {
   }
 
   if (token) {
-    interval = setInterval(function() { getData(true) }, snooze ? 5 * minute : 60 * minute);
-  }
-}
+    var delay;
+    if (snooze) {
+      delay = 5 * 60 * 1000;
+    } else {
+      // Set the interval for the start of the next hour
+      var now = new Date();
 
-chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
-  if (notifId === notificationID) {
-    if (btnIdx === 0) {
-      chrome.notifications.clear(notificationID);
-      updateInterval(true);
+      var next = new Date();
+      next.setHours(now.getHours() + 1);
+      next.setMinutes(0);
+      next.setMilliseconds(0);
+
+      delay = next - now;
     }
-  }
-});
 
-//for listening any message which comes from runtime
-chrome.runtime.onMessage.addListener(messageReceived);
-
-function messageReceived(msg) {
-  // If the options page says it has new options, reload options
-  if (msg.optons) {
-    getOptions();
+    interval = setInterval(function() { getData(true) }, delay);
   }
 }

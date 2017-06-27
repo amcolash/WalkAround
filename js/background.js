@@ -8,6 +8,9 @@ var interval;
 var token;
 var notificationID;
 
+// clear the console
+console.clear();
+
 // test the schedule before starting things up
 // testSchedule();
 
@@ -71,6 +74,7 @@ function getOptions() {
   });
 }
 
+// TODO: Need some sort of rate limiting if there are errors or user denies auth
 function auth(tryAgain) {
   chrome.identity.getAuthToken({
     interactive: true
@@ -148,6 +152,12 @@ function getData(compare) {
     var error = response.error;
     if (error) {
       console.error(error);
+      if (error.code === 401) {
+        // try to get new token
+        auth();
+        // snooze and try again soon
+        setInterval(true);
+      }
     } else {
       // console.log(res);
       var value = 0;
@@ -157,7 +167,7 @@ function getData(compare) {
         console.error(e);
       }
 
-      console.log("last value: " + lastCount + ", new value: " + value);
+      console.log((compare ? "last value: " + lastCount + ", " : "") + "new value: " + value);
 
       var pass = checkSchedule();
       if (compare)
@@ -199,16 +209,14 @@ function getData(compare) {
 }
 
 function testSchedule() {
-  console.clear();
-
   var now = new Date();
-  schedule.sun = now.getDay() == 0;
-  schedule.mon = now.getDay() == 1;
-  schedule.tues = now.getDay() == 2;
-  schedule.wed = now.getDay() == 3;
-  schedule.thurs = now.getDay() == 4;
-  schedule.fri = now.getDay() == 5;
-  schedule.sat = now.getDay() == 6;
+  schedule.sun = now.getDay() === 0;
+  schedule.mon = now.getDay() === 1;
+  schedule.tues = now.getDay() === 2;
+  schedule.wed = now.getDay() === 3;
+  schedule.thurs = now.getDay() === 4;
+  schedule.fri = now.getDay() === 5;
+  schedule.sat = now.getDay() === 6;
 
   now.setHours(4);
 
@@ -248,7 +256,6 @@ function testSchedule() {
   console.assert(checkSchedule(now), "schedule check failed");
 }
 
-// TODO: Check this out
 function checkSchedule(time) {
   var now = new Date();
   if (time) {

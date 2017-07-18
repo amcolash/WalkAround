@@ -4,9 +4,15 @@ var audio;
 var schedule = {};
 
 var lastCount = 0;
-var interval;
+var timer;
 var token;
 var notificationID;
+
+var TimerDelay = {
+  SNOOZE: 5,
+  PASSED: 60,
+  FAILED: 30,
+};
 
 // clear the console
 console.clear();
@@ -22,8 +28,15 @@ chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
   if (notifId === notificationID) {
     if (btnIdx === 0) {
       chrome.notifications.clear(notificationID);
-      updateInterval(true);
+      updateTimer(TimerDelay.SNOOZE);
     }
+  }
+});
+
+chrome.alarms.onAlarm.addListener(function(alarm) {
+  if (alarm.name === timer) {
+    timer = undefined;
+    getData(true);
   }
 });
 
@@ -39,7 +52,7 @@ function messageReceived(msg) {
 }
 
 
-// Get auth and set interval if we have a token and valid auth
+// Get auth and set timer if we have a token and valid auth
 auth(true);
 
 function getOptions() {
@@ -111,7 +124,7 @@ function auth(tryAgain) {
 }
 
 function onSuccess() {
-  updateInterval();
+  updateTimer(TimerDelay.PASSED);
 
   // Get inital count
   getData();
@@ -119,10 +132,19 @@ function onSuccess() {
 
 function onFailure(error) {
   console.error(error);
-  updateInterval();
+  // We are stuck at this point, probably can't get OAUTH access.
 }
 
 function getData(compare) {
+  var pass = checkSchedule();
+  // if (compare && !pass) {
+  //   console.log("schedule check failed, skipping until next check");
+  //   return;
+  // }
+
+  if (!token) return;
+
+
   var start = new Date();
   start.setHours(0,0,0,0);
 
@@ -139,8 +161,6 @@ function getData(compare) {
     "endTimeMillis": end.getTime()
   };
 
-  if (!token) return;
-
   var x = new XMLHttpRequest();
   x.open('POST', 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate');
   x.setRequestHeader("Authorization", "Bearer " + token);
@@ -156,7 +176,7 @@ function getData(compare) {
         // try to get new token
         auth();
         // snooze and try again soon
-        setInterval(true);
+        setTimer(true);
       }
     } else {
       // console.log(res);
@@ -168,10 +188,6 @@ function getData(compare) {
       }
 
       console.log((compare ? "last value: " + lastCount + ", " : "") + "new value: " + value);
-
-      var pass = checkSchedule();
-      if (compare)
-        console.log("check schedule: " + (pass ? "passed" : "failed"));
 
       if (compare) {
         if (value - lastCount < threshold) {
@@ -195,12 +211,14 @@ function getData(compare) {
           }, function(id) {
             notificationID = id;
           });
+
+          updateTimer(TimerDelay.FAILED);
         } else {
           console.log("you are ok");
+          updateTimer(TimerDelay.PASSED);
         }
       }
 
-      updateInterval(false);
       lastCount = value;
     }
   };
@@ -254,6 +272,8 @@ function testSchedule() {
   schedule.end = 4;
   // 4 > 4 && (4 > 4 || 4 < 4), F && (F || F) --> F  ~== T
   console.assert(checkSchedule(now), "schedule check failed");
+
+  console.log("all tests passed successfully!");
 }
 
 function checkSchedule(time) {
@@ -290,28 +310,15 @@ function checkSchedule(time) {
   }
 }
 
-function updateInterval(snooze) {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
+function updateTimer(delay) {
+  if (timer) {
+    chrome.alarms.clear(timer, function (wasCleared) {
+      console.log(wasCleared ? "cleared timer" : "failed to clear timer");
+    });
   }
 
   if (token) {
-    var delay;
-    if (snooze) {
-      delay = 5 * 60 * 1000;
-    } else {
-      // Set the interval for the start of the next hour
-      var now = new Date();
-
-      var next = new Date();
-      next.setHours(now.getHours() + 1);
-      next.setMinutes(0);
-      next.setMilliseconds(0);
-
-      delay = next - now;
-    }
-
-    interval = setInterval(function() { getData(true) }, delay);
+    timer = "timer";
+    chrome.alarms.create(timer, { delayInMinutes: delay });
   }
 }

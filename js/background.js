@@ -4,6 +4,7 @@ var audio;
 var schedule = {};
 
 var lastCount = 0;
+var lastDate;
 var timer;
 var token;
 var notificationID;
@@ -137,19 +138,26 @@ function onFailure(error) {
 
 function getData(compare) {
   var pass = checkSchedule();
-  // if (compare && !pass) {
-  //   console.log("schedule check failed, skipping until next check");
-  //   return;
-  // }
+  if (compare && !pass) {
+     console.log("schedule check failed, skipping until next check");
+     return;
+  }
 
   if (!token) return;
-
 
   var start = new Date();
   start.setHours(0,0,0,0);
 
   var end = new Date(start.getTime());
   end.setHours(23,59,59,9999);
+  
+  // Only check for the same day
+  if (lastDate && lastDate.getDate() !== start.getDate()) {
+	lastCount = 0;
+	compare = false;
+  }
+  
+  lastDate = start;
 
   var request = {
     "aggregateBy": [{
@@ -176,7 +184,7 @@ function getData(compare) {
         // try to get new token
         auth();
         // snooze and try again soon
-        setTimer(true);
+        updateTimer(TimerDelay.SNOOZE);
       }
     } else {
       // console.log(res);

@@ -23,6 +23,7 @@ console.clear();
 
 // Update options
 getOptions();
+getData();
 
 // Handle snoozing notifications
 chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
@@ -51,10 +52,6 @@ function messageReceived(msg) {
     getOptions();
   }
 }
-
-
-// Get auth and set timer if we have a token and valid auth
-auth(true);
 
 function getOptions() {
   chrome.storage.sync.get({
@@ -88,150 +85,107 @@ function getOptions() {
   });
 }
 
-// TODO: Need some sort of rate limiting if there are errors or user denies auth
-function auth(tryAgain) {
+function getData(compare) {
   chrome.identity.getAuthToken({
     interactive: true
   }, function(token) {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError.message);
-        return;
-      }
-
-      var x = new XMLHttpRequest();
-      x.open('GET', 'https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=' + token);
-
-      x.onload = function() {
-        // If there was an error, try to remove cached token and try re-auth
-        var error = JSON.parse(x.response).error;
-        if (error) {
-          if (tryAgain) {
-            chrome.identity.removeCachedAuthToken({token: token}, function() {
-              // Try to auth again, but stop trying if failed
-              onFailure(error);
-              auth(false);
-            });
-          } else {
-            onFailure(error);
-          }
-        } else {
-          window.token = token;
-          onSuccess();
-        }
-      };
-
-      x.send();
-  });
-}
-
-function onSuccess() {
-  updateTimer(TimerDelay.PASSED);
-
-  // Get inital count
-  getData();
-}
-
-function onFailure(error) {
-  console.error(error);
-  // We are stuck at this point, probably can't get OAUTH access.
-}
-
-function getData(compare) {
-  var pass = checkSchedule();
-  if (compare && !pass) {
-     console.log("schedule check failed, skipping until next check");
-     return;
-  }
-
-  if (!token) return;
-
-  var start = new Date();
-  start.setHours(0,0,0,0);
-
-  var end = new Date(start.getTime());
-  end.setHours(23,59,59,9999);
-  
-  // Only check for the same day
-  if (lastDate && lastDate.getDate() !== start.getDate()) {
-	lastCount = 0;
-	compare = false;
-  }
-  
-  lastDate = start;
-
-  var request = {
-    "aggregateBy": [{
-      "dataTypeName": "com.google.step_count.delta",
-      "dataSourceId": "derived:com.google.step_count.delta:com.google.android.gms:estimated_steps"
-    }],
-    "bucketByTime": { "durationMillis": 87000000 }, // one day roughly, a little more just in case
-    "startTimeMillis": start.getTime(),
-    "endTimeMillis": end.getTime()
-  };
-
-  var x = new XMLHttpRequest();
-  x.open('POST', 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate');
-  x.setRequestHeader("Authorization", "Bearer " + token);
-  x.setRequestHeader("Content-Type", "application/json;encoding=utf-8");
-
-  x.onload = function() {
-    var response = JSON.parse(x.response);
-    // If there was an error, try to remove cached token and try re-auth
-    var error = response.error;
-    if (error) {
-      console.error(error);
-      if (error.code === 401) {
-        // try to get new token
-        auth();
-        // snooze and try again soon
-        updateTimer(TimerDelay.SNOOZE);
-      }
-    } else {
-      // console.log(res);
-      var value = 0;
-      try {
-        value = response.bucket[0].dataset[0].point[0].value[0].intVal;
-      } catch (e) {
-        console.error(e);
-      }
-
-      console.log((compare ? "last value: " + lastCount + ", " : "") + "new value: " + value);
-
-      if (compare) {
-        if (value - lastCount < threshold) {
-          console.log("time to move!");
-
-          // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
-          if (audio) {
-            var chime = new Audio('../audio/chime.wav');
-            chime.play();
-          }
-
-          // Show a notification
-          chrome.notifications.create('', {
-            type: 'basic',
-            title:'WalkAround',
-            message: 'Time to move!',
-            iconUrl: 'img/walk.png',
-            eventTime: Date.now(),
-            priority: 1, // Keep around for a bit
-            buttons: [  { title: 'Snooze 5 min' } ]
-          }, function(id) {
-            notificationID = id;
-          });
-
-          updateTimer(TimerDelay.FAILED);
-        } else {
-          console.log("you are ok");
-          updateTimer(TimerDelay.PASSED);
-        }
-      }
-
-      lastCount = value;
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError.message);
+      return;
     }
-  };
 
-  x.send(JSON.stringify(request));
+    var start = new Date();
+    start.setHours(0,0,0,0);
+
+    var end = new Date(start.getTime());
+    end.setHours(23,59,59,9999);
+
+    // Only check for the same day
+    if (lastDate && lastDate.getDate() !== start.getDate()) {
+    	lastCount = 0;
+    	compare = false;
+    }
+
+    lastDate = start;
+
+    var pass = checkSchedule();
+    if (compare && !pass) {
+       console.log("schedule check failed, skipping until next check");
+       return;
+    }
+
+    var request = {
+      "aggregateBy": [{
+        "dataTypeName": "com.google.step_count.delta",
+        "dataSourceId": "derived:com.google.step_count.delta:com.google.android.gms:estimated_steps"
+      }],
+      "bucketByTime": { "durationMillis": 87000000 }, // one day roughly, a little more just in case
+      "startTimeMillis": start.getTime(),
+      "endTimeMillis": end.getTime()
+    };
+
+    var x = new XMLHttpRequest();
+    x.open('POST', 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate');
+    x.setRequestHeader("Authorization", "Bearer " + token);
+    x.setRequestHeader("Content-Type", "application/json;encoding=utf-8");
+
+    x.onload = function() {
+      var response = JSON.parse(x.response);
+      // If there was an error, try to remove cached token and try re-auth
+      var error = response.error;
+      if (error) {
+        console.error(error);
+        // try to get new token
+        chrome.identity.removeCachedAuthToken({token: token}, function() {
+          updateTimer(TimerDelay.ERROR); // Get new data in a while
+        });
+      } else {
+        // console.log(response);
+        var value = 0;
+        try {
+          value = response.bucket[0].dataset[0].point[0].value[0].intVal;
+        } catch (e) {
+          console.error(e);
+        }
+
+        console.log((compare ? "last value: " + lastCount + ", " : "") + "new value: " + value);
+
+        if (compare) {
+          if (value - lastCount < threshold) {
+            console.log("time to move!");
+
+            // Got audio file from: https://www.freesound.org/people/jgreer/sounds/333629/
+            if (audio) {
+              var chime = new Audio('../audio/chime.wav');
+              chime.play();
+            }
+
+            // Show a notification
+            chrome.notifications.create('', {
+              type: 'basic',
+              title:'WalkAround',
+              message: 'Time to move!',
+              iconUrl: 'img/walk.png',
+              eventTime: Date.now(),
+              priority: 1, // Keep around for a bit
+              buttons: [  { title: 'Snooze 5 min' } ]
+            }, function(id) {
+              notificationID = id;
+            });
+
+            updateTimer(TimerDelay.FAILED);
+          } else {
+            console.log("you are ok");
+            updateTimer(TimerDelay.PASSED);
+          }
+        }
+
+        lastCount = value;
+      }
+    };
+
+    x.send(JSON.stringify(request));
+  });
 }
 
 function testSchedule() {
@@ -325,8 +279,6 @@ function updateTimer(delay) {
     });
   }
 
-  if (token) {
-    timer = "timer";
-    chrome.alarms.create(timer, { delayInMinutes: delay });
-  }
+  timer = "timer";
+  chrome.alarms.create(timer, { delayInMinutes: delay });
 }

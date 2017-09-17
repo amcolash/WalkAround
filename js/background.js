@@ -39,10 +39,15 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   if (alarm.name === timer) {
     timer = undefined;
     getData(true);
+
+    // Safety measure
+    if (!timer) {
+      updateTimer(TimerDelay.FAILED);
+    }
   }
 });
 
-//for listening any message which comes from runtime
+//for listening to any message which comes from runtime
 chrome.runtime.onMessage.addListener(messageReceived);
 
 // On chrome message recieved
@@ -137,7 +142,7 @@ function getData(compare) {
         console.error(error);
         // try to get new token
         chrome.identity.removeCachedAuthToken({token: token}, function() {
-          updateTimer(TimerDelay.ERROR); // Get new data in a while
+          updateTimer(TimerDelay.FAILED); // Get new data in a while
         });
       } else {
         // console.log(response);

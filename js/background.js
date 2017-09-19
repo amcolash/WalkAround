@@ -15,15 +15,19 @@ var TimerDelay = {
   FAILED: 30,
 };
 
-// clear the console
-console.clear();
+main();
 
-// test the schedule before starting things up
-// testSchedule();
+function main() {
+  // clear the console
+  console.clear();
 
-// Update options
-getOptions();
-getData();
+  // test the schedule before starting things up
+  // testSchedule();
+
+  // Update options
+  getOptions();
+  getData();
+}
 
 // Handle snoozing notifications
 chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
@@ -33,6 +37,13 @@ chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
       updateTimer(TimerDelay.SNOOZE);
     }
   }
+});
+
+self.addEventListener('notificationclose', function(event) {
+	console.log("notification closed: " + event);
+	if (event.notification === notificationID) {
+		updateTimer(TimerDelay.SNOOZE * 2);
+	}
 });
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
@@ -173,17 +184,20 @@ function getData(compare) {
               iconUrl: 'img/walk.png',
               eventTime: Date.now(),
               priority: 1, // Keep around for a bit
+			  requireInteraction: true,
               buttons: [  { title: 'Snooze 5 min' } ]
             }, function(id) {
               notificationID = id;
             });
-
-            updateTimer(TimerDelay.FAILED);
+			
+			// on close/snooze the timer will be set again
           } else {
             console.log("you are ok");
             updateTimer(TimerDelay.PASSED);
           }
-        }
+        } else {
+			updateTimer(TimerDelay.PASSED);
+		}
 
         lastCount = value;
       }
@@ -279,6 +293,7 @@ function checkSchedule(time) {
 
 function updateTimer(delay) {
   if (timer) {
+	console.log("we are going to clear timer (async)");
     chrome.alarms.clear(timer, function (wasCleared) {
       console.log(wasCleared ? "cleared timer" : "failed to clear timer");
     });
@@ -286,4 +301,5 @@ function updateTimer(delay) {
 
   timer = "timer";
   chrome.alarms.create(timer, { delayInMinutes: delay });
+  console.log("set alarm for: " + delay + " minutes");
 }
